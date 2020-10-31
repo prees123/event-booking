@@ -7,6 +7,40 @@ const mongoose = require("mongoose");
 const Event = require("./models/event");
 const User = require("./models/user");
 
+const app = express();
+
+app.use(bodyParser.json());
+
+const events = (eventids) => {
+  return Event.find({ _id: { $in: eventids } })
+    .then((events) => {
+      return events.map((event) => {
+        return {
+          ...event._doc,
+          _id: event.id,
+          creator: user.bind(this, event.creator),
+        };
+      });
+    })
+    .catch((err) => {
+      throw err;
+    });
+};
+
+const user = (userId) => {
+  return User.findById(userId)
+    .then((user) => {
+      return {
+        ...user._doc,
+        _id: user.id,
+        createdEvents: events.bind(this, user._doc.createdEvents),
+      };
+    })
+    .catch((err) => {
+      throw err;
+    });
+};
+
 const schema = buildSchema(`
     type Event {
         _id: ID!
@@ -56,7 +90,11 @@ const root = {
     return Event.find()
       .then((events) => {
         return events.map((event) => {
-          return { ...event._doc, _id: event.id };
+          return {
+            ...event._doc,
+            _id: event.id,
+            creator: user.bind(this, event._doc.creator),
+          };
         });
       })
       .catch((err) => {
@@ -116,9 +154,6 @@ const root = {
       });
   },
 };
-const app = express();
-
-app.use(bodyParser.json());
 
 app.use(
   "/graphql",
